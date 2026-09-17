@@ -4,7 +4,7 @@
 
 ```text
 +------------------------------------------------------------------+
-| BuilderPOC                                      user@example.com  |
+| BuilderCore                                      user@example.com  |
 +----------------+-------------------------------------------------+
 | Dashboard      |                                                 |
 | Estimates      |              PAGE CONTENT                       |

@@ -1,0 +1,88 @@
+@page "/estimates"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject IEstimateService EstimateService
+
+<PageTitle>Estimates</PageTitle>
+
+<PageHeader Title="Estimates" Subtitle="Create, edit, and approve project estimates.">
+    <Actions>
+        <a class="btn-primary" href="/estimates/new">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            New Estimate
+        </a>
+    </Actions>
+</PageHeader>
+
+<div class="mb-6 max-w-md">
+    <div class="search-input-wrap">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input class="search-input" placeholder="Search estimates or projects..." @bind="search" @bind:event="oninput" @onkeyup="LoadAsync" />
+    </div>
+</div>
+
+@if (loading)
+{
+    <LoadingState Message="Loading estimates..." ShowSkeleton="false" />
+}
+else if (estimates.Count == 0)
+{
+    <EmptyState Title="No estimates found" Description="Create your first estimate to begin the estimating workflow.">
+        <Actions><a href="/estimates/new" class="btn-primary">+ New Estimate</a></Actions>
+    </EmptyState>
+}
+else
+{
+    <div class="card">
+        <div class="data-table-wrap rounded-none border-0">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Estimate</th>
+                        <th>Project</th>
+                        <th>Status</th>
+                        <th class="text-currency">Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var estimate in estimates)
+                    {
+                        <tr>
+                            <td class="font-semibold text-slate-900">@estimate.EstimateNumber</td>
+                            <td>@estimate.ProjectName</td>
+                            <td><StatusBadge Status="@estimate.Status" /></td>
+                            <td class="text-currency font-medium">@CurrencyHelper.Format(totals.GetValueOrDefault(estimate.EstimateId))</td>
+                            <td class="text-right">
+                                <a class="btn-secondary btn-sm" href="@($"/estimates/{estimate.EstimateId}")">
+                                    @(estimate.Status == "Draft" ? "Edit" : "View")
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    private IReadOnlyList<Estimate> estimates = [];
+    private Dictionary<int, decimal> totals = new();
+    private string search = string.Empty;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        estimates = await EstimateService.GetAllAsync(search);
+        totals = new Dictionary<int, decimal>();
+        foreach (var estimate in estimates)
+        {
+            totals[estimate.EstimateId] = await EstimateService.GetTotalAsync(estimate.EstimateId);
+        }
+        loading = false;
+    }
+}

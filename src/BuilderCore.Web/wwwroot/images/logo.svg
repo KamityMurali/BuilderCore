@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="BuilderCore">
+  <rect width="48" height="48" rx="12" fill="#18181b"/>
+  <path d="M4 24 L24 4 L44 24 L24 44 Z" stroke="#fafafa" stroke-opacity="0.18" stroke-width="1.25"/>
+  <path d="M12 24 L24 12 L36 24 L24 36 Z" stroke="#fafafa" stroke-opacity="0.1" stroke-width="1"/>
+  <path d="M10 28 L24 18 L38 28 L24 38 Z" fill="#fafafa" fill-opacity="0.92"/>
+  <path d="M14 26 L24 19 L34 26 L24 33 Z" fill="#18181b" fill-opacity="0.22"/>
+  <path d="M24 8 V14" stroke="#fafafa" stroke-opacity="0.55" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M24 34 V40" stroke="#fafafa" stroke-opacity="0.55" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="24" cy="24" r="3.25" fill="#fafafa"/>
+  <circle cx="24" cy="24" r="1.35" fill="#18181b"/>
+</svg>

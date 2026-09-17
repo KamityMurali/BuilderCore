@@ -1,0 +1,12 @@
+{
+  "name": "buildercore-web",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./Styles/app.input.css -o ./wwwroot/css/site.css --minify",
+    "watch:css": "tailwindcss -i ./Styles/app.input.css -o ./wwwroot/css/site.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7"
+  }
+}

@@ -1,0 +1,85 @@
+@* BuilderCore mark: isometric layers converging on a central "core" *@
+<div class="@RootClass">
+    <div class="@MarkClass @(Tone == LogoTone.Inverse ? "logo-mark-inverse" : null)" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-full w-full">
+            <defs>
+                <linearGradient id="bc-core-gradient" x1="8" y1="8" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="currentColor" stop-opacity="0.95" />
+                    <stop offset="1" stop-color="currentColor" stop-opacity="0.55" />
+                </linearGradient>
+            </defs>
+            <path class="text-muted-foreground/25" d="M4 24 L24 4 L44 24 L24 44 Z" stroke="currentColor" stroke-width="1.25" fill="none" />
+            <path class="text-muted-foreground/15" d="M12 24 L24 12 L36 24 L24 36 Z" stroke="currentColor" stroke-width="1" fill="none" />
+            <path d="M10 28 L24 18 L38 28 L24 38 Z" fill="url(#bc-core-gradient)" class="text-foreground" />
+            <path d="M14 26 L24 19 L34 26 L24 33 Z" fill="currentColor" class="text-primary-foreground" fill-opacity="0.18" />
+            <path d="M24 8 V14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" class="text-foreground/70" />
+            <path d="M24 34 V40" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" class="text-foreground/70" />
+            <circle cx="24" cy="24" r="3.25" fill="currentColor" class="text-primary-foreground" />
+            <circle cx="24" cy="24" r="1.35" fill="currentColor" class="text-foreground" />
+        </svg>
+    </div>
+
+    @if (ShowWordmark)
+    {
+        <div class="min-w-0 leading-tight">
+            <span class="@WordmarkClass">Builder<span class="@CoreWordClass">Core</span></span>
+            @if (!string.IsNullOrWhiteSpace(Tagline))
+            {
+                <span class="@TaglineClass">@Tagline</span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public LogoSize Size { get; set; } = LogoSize.Md;
+    [Parameter] public LogoTone Tone { get; set; } = LogoTone.Default;
+    [Parameter] public bool ShowWordmark { get; set; } = true;
+    [Parameter] public string? Tagline { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string RootClass => $"{Size switch
+    {
+        LogoSize.Sm => "gap-2",
+        LogoSize.Lg => "gap-3.5",
+        _ => "gap-2.5"
+    }} flex min-w-0 items-center {Class}";
+
+    private string MarkClass => $"logo-mark {Size switch
+    {
+        LogoSize.Sm => "logo-mark-sm",
+        LogoSize.Lg => "logo-mark-lg",
+        _ => "logo-mark-md"
+    }}";
+
+    private string WordmarkClass => $"{Size switch
+    {
+        LogoSize.Sm => "block truncate text-sm font-bold tracking-tight",
+        LogoSize.Lg => "block truncate text-2xl font-bold tracking-tight",
+        _ => "block truncate text-base font-bold tracking-tight"
+    }} {(Tone == LogoTone.Inverse ? "text-primary-foreground" : null)}";
+
+    private string CoreWordClass => Tone == LogoTone.Inverse
+        ? "font-normal text-primary-foreground/70"
+        : "font-normal text-muted-foreground";
+
+    private string TaglineClass => $"{Size switch
+    {
+        LogoSize.Sm => "block truncate text-[10px] uppercase tracking-[0.14em]",
+        LogoSize.Lg => "block truncate text-xs uppercase tracking-[0.18em]",
+        _ => "block truncate text-[11px] uppercase tracking-[0.16em]"
+    }} {(Tone == LogoTone.Inverse ? "text-primary-foreground/65" : "text-muted-foreground")}";
+
+    public enum LogoSize
+    {
+        Sm,
+        Md,
+        Lg
+    }
+
+    public enum LogoTone
+    {
+        Default,
+        Inverse
+    }
+}

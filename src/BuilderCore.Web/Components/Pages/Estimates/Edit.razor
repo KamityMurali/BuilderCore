@@ -1,0 +1,270 @@
+@page "/estimates/new"
+@page "/estimates/{EstimateId:int}"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject IEstimateService EstimateService
+@inject IJobService JobService
+@inject ICostCodeService CostCodeService
+@inject NavigationManager Navigation
+
+<PageTitle>@(IsNew ? "New Estimate" : $"Estimate {estimate?.EstimateNumber}")</PageTitle>
+
+@if (loading)
+{
+    <LoadingState Message="Loading estimate..." ShowSkeleton="false" />
+}
+else if (estimate is not null)
+{
+    <PageHeader Title="@($"Estimate {estimate.EstimateNumber}")" Subtitle="@estimate.ProjectName">
+        <Actions><StatusBadge Status="@estimate.Status" /></Actions>
+    </PageHeader>
+
+    <AlertMessage Message="@message" IsError="@isError" OnClear="ClearMessage" />
+
+    @if (IsReadOnly)
+    {
+        <div class="card mb-6">
+            <div class="card-body">
+                <div class="grid gap-6 sm:grid-cols-2">
+                    <div>
+                        <div class="text-xs font-semibold uppercase text-slate-500">Project</div>
+                        <div class="mt-1 text-lg font-semibold text-slate-900">@estimate.ProjectName</div>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold uppercase text-slate-500">Total</div>
+                        <div class="mt-1 text-2xl font-bold text-brand-700">@CurrencyHelper.Format(Total)</div>
+                    </div>
+                </div>
+                <div class="mt-6 flex gap-2">
+                    @if (estimate.JobId is null)
+                    {
+                        <button class="btn-primary" @onclick="ShowCreateJob" disabled="@busy">Create Job</button>
+                    }
+                    else
+                    {
+                        <a class="btn-secondary" href="@($"/jobs/{estimate.JobId}")">View Job</a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="estimate" OnValidSubmit="SaveAsync">
+            <div class="card mb-6">
+                <div class="card-body grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="label">Estimate Number *</label>
+                        <InputText class="input" @bind-Value="estimate.EstimateNumber" disabled="@(!IsNew)" />
+                    </div>
+                    <div>
+                        <label class="label">Project Name *</label>
+                        <InputText class="input" @bind-Value="estimate.ProjectName" />
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="label">Description</label>
+                        <InputTextArea class="input" @bind-Value="estimate.Description" rows="2" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-6">
+                <div class="card-body">
+                    <div class="mb-4 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-900">Estimate Lines</h3>
+                        <button type="button" class="btn-secondary btn-sm" @onclick="AddLine">+ Add Line</button>
+                    </div>
+                    <div class="data-table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Cost Code</th>
+                                    <th>Description</th>
+                                    <th>Qty</th>
+                                    <th class="text-currency">Unit Cost</th>
+                                    <th class="text-currency">Amount</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (var i = 0; i < lines.Count; i++)
+                                {
+                                    var index = i;
+                                    <tr>
+                                        <td>
+                                            <InputSelect class="select" @bind-Value="lines[index].CostCodeId">
+                                                <option value="0">Select...</option>
+                                                @foreach (var cc in costCodes)
+                                                {
+                                                    <option value="@cc.CostCodeId">@cc.Code - @cc.Description</option>
+                                                }
+                                            </InputSelect>
+                                        </td>
+                                        <td><InputText class="input" @bind-Value="lines[index].Description" /></td>
+                                        <td><InputNumber class="input w-24" @bind-Value="lines[index].Quantity" /></td>
+                                        <td><InputNumber class="input text-currency" @bind-Value="lines[index].UnitCost" /></td>
+                                        <td class="text-currency font-medium">@CurrencyHelper.Format(lines[index].LineAmount)</td>
+                                        <td><button type="button" class="btn-danger btn-sm" @onclick="() => RemoveLine(index)">Remove</button></td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-right">Total</td>
+                                    <td class="text-currency text-brand-700">@CurrencyHelper.Format(Total)</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <button type="submit" class="btn-primary" disabled="@busy">Save Draft</button>
+                @if (!IsNew)
+                {
+                    <button type="button" class="btn-success" @onclick="ConfirmApprove" disabled="@busy">Approve Estimate</button>
+                }
+            </div>
+        </EditForm>
+    }
+
+    <Modal Visible="@showApproveConfirm" Title="@($"Approve {estimate.EstimateNumber}?")" OnClose="() => showApproveConfirm = false">
+        <ChildContent>
+            <p class="text-sm text-slate-600">Approved estimates become read-only and can be converted into a job with a budget snapshot.</p>
+        </ChildContent>
+        <Footer>
+            <button class="btn-secondary" @onclick="() => showApproveConfirm = false">Cancel</button>
+            <button class="btn-success" @onclick="ApproveAsync" disabled="@busy">Approve</button>
+        </Footer>
+    </Modal>
+
+    <Modal Visible="@showCreateJob" Title="@($"Create Job from {estimate.EstimateNumber}")" OnClose="() => showCreateJob = false">
+        <ChildContent>
+            <div class="space-y-4">
+                <div>
+                    <label class="label">Job Number *</label>
+                    <InputText class="input" @bind-Value="jobNumber" />
+                </div>
+                <div>
+                    <label class="label">Job Name *</label>
+                    <InputText class="input" @bind-Value="jobName" />
+                </div>
+                <div class="rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">
+                    Budget to create: <strong>@CurrencyHelper.Format(Total)</strong>
+                </div>
+            </div>
+        </ChildContent>
+        <Footer>
+            <button class="btn-secondary" @onclick="() => showCreateJob = false">Cancel</button>
+            <button class="btn-primary" @onclick="CreateJobAsync" disabled="@busy">Create Job</button>
+        </Footer>
+    </Modal>
+}
+
+@code {
+    [Parameter] public int EstimateId { get; set; }
+
+    private Estimate? estimate;
+    private List<EstimateLine> lines = [];
+    private IReadOnlyList<CostCode> costCodes = [];
+    private bool loading = true;
+    private bool busy;
+    private bool showApproveConfirm;
+    private bool showCreateJob;
+    private string? message;
+    private bool isError;
+    private string jobNumber = string.Empty;
+    private string jobName = string.Empty;
+
+    private bool IsNew => EstimateId == 0;
+    private bool IsReadOnly => estimate?.Status == "Approved";
+    private decimal Total => lines.Sum(l => l.LineAmount);
+
+    protected override async Task OnInitializedAsync()
+    {
+        costCodes = await CostCodeService.GetActiveAsync();
+        if (IsNew)
+        {
+            estimate = new Estimate { EstimateNumber = $"EST-{DateTime.UtcNow:yyyyMMddHHmmss}" };
+            lines.Add(new EstimateLine { Quantity = 1 });
+        }
+        else
+        {
+            estimate = await EstimateService.GetByIdAsync(EstimateId);
+            if (estimate is null)
+            {
+                Navigation.NavigateTo("/estimates");
+                return;
+            }
+            lines = (await EstimateService.GetLinesAsync(EstimateId)).ToList();
+        }
+        loading = false;
+    }
+
+    private void AddLine() => lines.Add(new EstimateLine { Quantity = 1 });
+    private void RemoveLine(int index) => lines.RemoveAt(index);
+    private void ShowCreateJob()
+    {
+        jobNumber = $"JOB-{estimate!.EstimateNumber.Replace("EST-", string.Empty)}";
+        jobName = estimate.ProjectName;
+        showCreateJob = true;
+    }
+    private void ConfirmApprove() => showApproveConfirm = true;
+    private void ClearMessage() => message = null;
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        message = null;
+        try
+        {
+            var id = await EstimateService.SaveAsync(estimate!, lines);
+            if (IsNew)
+            {
+                Navigation.NavigateTo($"/estimates/{id}");
+                return;
+            }
+            estimate = await EstimateService.GetByIdAsync(id);
+            message = "Estimate saved.";
+        }
+        catch (ValidationException ex) { isError = true; message = ex.Message; }
+        catch (DbUpdateConcurrencyException) { isError = true; message = DbUpdateConcurrencyException.UserMessage; estimate = await EstimateService.GetByIdAsync(EstimateId); }
+        catch (Exception) { isError = true; message = "An unexpected error occurred."; }
+        finally { busy = false; }
+    }
+
+    private async Task ApproveAsync()
+    {
+        busy = true;
+        message = null;
+        try
+        {
+            await EstimateService.ApproveAsync(estimate!.EstimateId, estimate.Version);
+            showApproveConfirm = false;
+            estimate = await EstimateService.GetByIdAsync(estimate.EstimateId);
+            message = "Estimate approved.";
+            isError = false;
+        }
+        catch (ValidationException ex) { isError = true; message = ex.Message; }
+        catch (DbUpdateConcurrencyException) { isError = true; message = DbUpdateConcurrencyException.UserMessage; estimate = await EstimateService.GetByIdAsync(EstimateId); }
+        catch (Exception) { isError = true; message = "An unexpected error occurred."; }
+        finally { busy = false; }
+    }
+
+    private async Task CreateJobAsync()
+    {
+        busy = true;
+        message = null;
+        try
+        {
+            var jobId = await JobService.CreateFromEstimateAsync(estimate!.EstimateId, jobNumber, jobName);
+            showCreateJob = false;
+            Navigation.NavigateTo($"/jobs/{jobId}");
+        }
+        catch (ValidationException ex) { isError = true; message = ex.Message; }
+        catch (Exception) { isError = true; message = "An unexpected error occurred."; }
+        finally { busy = false; }
+    }
+}

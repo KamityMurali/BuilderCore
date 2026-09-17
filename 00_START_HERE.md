@@ -1,14 +1,14 @@
-# BuilderPOC — Start Here
+# BuilderCore — Start Here
 
 This package is intended to be copied into the root of a newly created Git repository before giving the implementation prompt to a coding agent.
 
 ## Recommended sequence
 
-1. Create an empty GitHub repository named `BuilderPOC`.
+1. Create an empty GitHub repository named `BuilderCore`.
 2. Clone it locally:
    ```bash
    git clone <repository-url>
-   cd BuilderPOC
+   cd BuilderCore
    ```
 3. Extract/copy the complete contents of this package into the repository root.
 4. Confirm `.NET 10`:
@@ -18,7 +18,7 @@ This package is intended to be copied into the root of a newly created Git repos
 5. Commit the specification baseline:
    ```bash
    git add .
-   git commit -m "Add BuilderPOC implementation specification"
+   git commit -m "Add BuilderCore implementation specification"
    git push
    ```
 6. Open the repository folder in Cursor, VS Code/Copilot, or another coding-agent environment.
@@ -29,7 +29,7 @@ This package is intended to be copied into the root of a newly created Git repos
    dotnet restore
    dotnet build
    dotnet test
-   dotnet run --project src/BuilderPOC.Web
+   dotnet run --project src/BuilderCore.Web
    ```
 10. Review the demo workflow and then commit the implementation.
 
@@ -47,7 +47,7 @@ The initial runtime uses:
 - Blazor Interactive Server
 - Dapper
 - Microsoft.Data.Sqlite
-- local `builderpoc.db`
+- local `buildercore.db`
 - safe Development-only local authentication
 - realistic fictional demo data
 
@@ -56,12 +56,12 @@ AWS Cognito and AWS deployment are later steps.
 ## Expected repository after implementation
 
 ```text
-BuilderPOC/
-├── BuilderPOC.sln
+BuilderCore/
+├── BuilderCore.sln
 ├── src/
-│   └── BuilderPOC.Web/
+│   └── BuilderCore.Web/
 ├── tests/
-│   └── BuilderPOC.Tests/
+│   └── BuilderCore.Tests/
 ├── database/
 ├── docs/
 ├── mockups/

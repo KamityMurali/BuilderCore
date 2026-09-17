@@ -1,0 +1,96 @@
+@page "/setup/vendors"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject IVendorService VendorService
+
+<PageTitle>Vendors</PageTitle>
+
+<PageHeader Title="Vendors" Subtitle="Manage vendor records for purchase orders and actual costs." />
+
+<AlertMessage Message="@message" IsError="@isError" OnClear="ClearMessage" />
+
+<div class="grid gap-6 lg:grid-cols-5">
+    <div class="card lg:col-span-2">
+        <div class="card-body">
+            <h3 class="mb-4 text-lg font-semibold text-slate-900">@(editing.VendorId == 0 ? "Add Vendor" : "Edit Vendor")</h3>
+            <EditForm Model="editing" OnValidSubmit="SaveAsync" class="space-y-4">
+                <div>
+                    <label class="label">Vendor Name *</label>
+                    <InputText class="input" @bind-Value="editing.VendorName" />
+                </div>
+                <div>
+                    <label class="label">Email</label>
+                    <InputText class="input" @bind-Value="editing.Email" />
+                </div>
+                <div>
+                    <label class="label">Phone</label>
+                    <InputText class="input" @bind-Value="editing.Phone" />
+                </div>
+                <label class="flex items-center gap-2 text-sm text-slate-700">
+                    <InputCheckbox class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" @bind-Value="editing.IsActive" />
+                    Active
+                </label>
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" class="btn-primary" disabled="@busy">Save</button>
+                    @if (editing.VendorId != 0)
+                    {
+                        <button type="button" class="btn-secondary" @onclick="ResetForm">Cancel</button>
+                    }
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+    <div class="card lg:col-span-3">
+        <div class="data-table-wrap rounded-none border-0">
+            <table class="data-table">
+                <thead><tr><th>Name</th><th>Email</th><th>Active</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var item in vendors)
+                    {
+                        <tr>
+                            <td class="font-semibold text-slate-900">@item.VendorName</td>
+                            <td class="text-slate-600">@item.Email</td>
+                            <td>
+                                @if (item.IsActive) { <span class="badge-approved">Yes</span> }
+                                else { <span class="badge-draft">No</span> }
+                            </td>
+                            <td class="text-right"><button class="btn-secondary btn-sm" @onclick="() => Edit(item)">Edit</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<Vendor> vendors = [];
+    private Vendor editing = new();
+    private bool busy;
+    private string? message;
+    private bool isError;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync() => vendors = await VendorService.GetAllAsync();
+    private void Edit(Vendor item) => editing = new Vendor { VendorId = item.VendorId, VendorName = item.VendorName, Email = item.Email, Phone = item.Phone, IsActive = item.IsActive };
+    private void ResetForm() => editing = new Vendor();
+    private void ClearMessage() => message = null;
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        try
+        {
+            await VendorService.SaveAsync(editing);
+            message = "Vendor saved.";
+            isError = false;
+            editing = new Vendor();
+            await LoadAsync();
+        }
+        catch (ValidationException ex) { isError = true; message = ex.Message; }
+        catch (Exception) { isError = true; message = "An unexpected error occurred."; }
+        finally { busy = false; }
+    }
+}

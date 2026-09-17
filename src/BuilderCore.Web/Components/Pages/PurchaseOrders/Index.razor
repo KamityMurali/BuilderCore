@@ -1,0 +1,74 @@
+@page "/purchase-orders"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject IPurchaseOrderService PurchaseOrderService
+
+<PageTitle>Purchase Orders</PageTitle>
+
+<PageHeader Title="Purchase Orders" Subtitle="Manage draft, issued, and closed purchase orders.">
+    <Actions>
+        <a class="btn-primary" href="/purchase-orders/new">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            New PO
+        </a>
+    </Actions>
+</PageHeader>
+
+@if (loading)
+{
+    <LoadingState Message="Loading purchase orders..." ShowSkeleton="false" />
+}
+else if (orders.Count == 0)
+{
+    <EmptyState Title="No purchase orders" Description="Create a purchase order against an active job to track committed costs.">
+        <Actions><a href="/purchase-orders/new" class="btn-primary">+ New PO</a></Actions>
+    </EmptyState>
+}
+else
+{
+    <div class="card">
+        <div class="data-table-wrap rounded-none border-0">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>PO</th>
+                        <th>Job</th>
+                        <th>Vendor</th>
+                        <th>Status</th>
+                        <th class="text-currency">Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var po in orders)
+                    {
+                        <tr>
+                            <td class="font-semibold text-slate-900">@po.PONumber</td>
+                            <td><span class="text-slate-700">@po.JobNumber</span><span class="block text-xs text-slate-500">@po.JobName</span></td>
+                            <td>@po.VendorName</td>
+                            <td><StatusBadge Status="@po.Status" /></td>
+                            <td class="text-currency font-medium">@CurrencyHelper.Format(totals.GetValueOrDefault(po.PurchaseOrderId))</td>
+                            <td class="text-right"><a class="btn-secondary btn-sm" href="@($"/purchase-orders/{po.PurchaseOrderId}")">Open</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    private IReadOnlyList<PurchaseOrder> orders = [];
+    private Dictionary<int, decimal> totals = new();
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        orders = await PurchaseOrderService.GetAllAsync();
+        foreach (var po in orders)
+        {
+            totals[po.PurchaseOrderId] = await PurchaseOrderService.GetTotalAsync(po.PurchaseOrderId);
+        }
+        loading = false;
+    }
+}

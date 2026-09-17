@@ -4,7 +4,7 @@ Read `ONE_PROMPT_BUILD.md` in the repository root and treat it as the authoritat
 
 Before writing code, read every supporting specification, database, mockup, testing, security, and demo-data file referenced by it.
 
-Implement the complete BuilderPOC application directly in this repository.
+Implement the complete BuilderCore application directly in this repository.
 
 Work autonomously through the full implementation. Do not stop after producing a plan, architecture description, scaffolding, or partial implementation. Do not ask for confirmation between implementation phases unless a genuine external dependency makes progress impossible.
 

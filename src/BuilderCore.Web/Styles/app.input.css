@@ -1,0 +1,456 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 240 5.9% 10%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142 70% 45%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 240 5.9% 10%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply min-h-screen bg-background;
+    --portal-banner-height: 4rem;
+  }
+
+  .app-frame {
+    @apply flex min-h-[calc(100vh-var(--portal-banner-height))];
+  }
+
+  .portal-banner {
+    @apply sticky top-0 z-50 border-b bg-primary text-primary-foreground shadow-sm;
+  }
+
+  .portal-banner-grid {
+    @apply pointer-events-none absolute inset-0 opacity-30;
+    background-image:
+      linear-gradient(to right, hsl(0 0% 100% / 0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(0 0% 100% / 0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .portal-banner-accent {
+    @apply pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-white/10 to-transparent;
+  }
+
+  .portal-banner-inner {
+    @apply relative mx-auto flex h-16 max-w-screen-2xl items-center justify-between gap-3 px-4 md:px-6;
+  }
+
+  .portal-banner-tagline {
+    @apply text-sm font-medium tracking-wide text-primary-foreground/75;
+  }
+
+  .portal-banner-badge {
+    @apply items-center rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground/90;
+  }
+
+  .portal-banner-icon-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-md border border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground transition-colors hover:bg-primary-foreground/20;
+  }
+
+  .portal-banner-avatar {
+    @apply h-8 w-8 items-center justify-center rounded-full bg-primary-foreground/15 text-xs font-semibold text-primary-foreground ring-1 ring-primary-foreground/20;
+  }
+
+  .portal-banner-link {
+    @apply items-center rounded-md px-2.5 py-1.5 text-sm font-medium text-primary-foreground/90 transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground;
+  }
+
+  /* shadcn-style sidebar */
+  .sidebar {
+    @apply fixed bottom-0 left-0 z-50 flex w-[280px] flex-col border-r bg-card transition-transform duration-300 ease-in-out md:translate-x-0;
+    top: var(--portal-banner-height);
+  }
+
+  .sidebar-hidden {
+    @apply -translate-x-full md:translate-x-0;
+  }
+
+  .sidebar-header {
+    @apply flex h-12 items-center justify-between border-b px-4;
+  }
+
+  .sidebar-nav {
+    @apply flex-1 space-y-1 overflow-y-auto p-2;
+  }
+
+  .nav-section-label {
+    @apply px-2 pb-1 pt-4 text-xs font-medium text-muted-foreground;
+  }
+
+  .nav-link {
+    @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .nav-link-active {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  .page-container {
+    @apply container w-full flex-1 py-4 md:ml-[280px] md:py-6 lg:py-8;
+  }
+
+  .page-header {
+    @apply mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .page-title {
+    @apply text-2xl font-semibold tracking-tight md:text-3xl;
+  }
+
+  .page-subtitle {
+    @apply mt-1 text-sm text-muted-foreground;
+  }
+
+  /* shadcn Card */
+  .card {
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+  }
+
+  .card-header {
+    @apply flex flex-col space-y-1.5 p-6;
+  }
+
+  .card-title {
+    @apply text-lg font-semibold leading-none tracking-tight;
+  }
+
+  .card-description {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .card-body {
+    @apply p-6 pt-0;
+  }
+
+  .card-footer {
+    @apply flex items-center p-6 pt-0;
+  }
+
+  .stat-card {
+    @apply card p-6;
+  }
+
+  /* shadcn Button variants */
+  .btn {
+    @apply inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-primary-foreground shadow hover:bg-primary/90;
+  }
+
+  .btn-secondary {
+    @apply btn bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80;
+  }
+
+  .btn-outline {
+    @apply btn border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .btn-ghost {
+    @apply btn hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .btn-destructive {
+    @apply btn bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90;
+  }
+
+  .btn-success {
+    @apply btn bg-success text-success-foreground shadow hover:bg-success/90;
+  }
+
+  .btn-warning {
+    @apply btn bg-warning text-warning-foreground shadow hover:bg-warning/90;
+  }
+
+  .btn-danger {
+    @apply btn-destructive;
+  }
+
+  .btn-sm {
+    @apply h-8 rounded-md px-3 text-xs;
+  }
+
+  .btn-icon {
+    @apply h-9 w-9 p-0;
+  }
+
+  /* shadcn Input */
+  .input {
+    @apply flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .select {
+    @apply input appearance-none pr-8;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-size: 1rem;
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+  }
+
+  .label {
+    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
+  }
+
+  .form-item {
+    @apply space-y-2;
+  }
+
+  .search-input-wrap {
+    @apply relative;
+  }
+
+  .search-input-wrap svg {
+    @apply pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground;
+  }
+
+  .search-input {
+    @apply input pl-9;
+  }
+
+  /* shadcn Table */
+  .data-table-wrap {
+    @apply relative w-full overflow-auto rounded-md border;
+  }
+
+  .data-table {
+    @apply w-full caption-bottom text-sm;
+  }
+
+  .data-table thead {
+    @apply border-b;
+  }
+
+  .data-table th {
+    @apply h-10 px-4 text-left align-middle text-xs font-medium text-muted-foreground;
+  }
+
+  .data-table td {
+    @apply p-4 align-middle;
+  }
+
+  .data-table tbody tr {
+    @apply border-b transition-colors hover:bg-muted/50;
+  }
+
+  .data-table tfoot td {
+    @apply bg-muted/50 font-medium;
+  }
+
+  .text-currency {
+    @apply text-right tabular-nums;
+  }
+
+  /* shadcn Badge */
+  .badge {
+    @apply inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  }
+
+  .badge-default {
+    @apply badge border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80;
+  }
+
+  .badge-secondary {
+    @apply badge border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+
+  .badge-outline {
+    @apply badge text-foreground;
+  }
+
+  .badge-destructive {
+    @apply badge border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80;
+  }
+
+  .badge-success {
+    @apply badge border-transparent bg-success text-success-foreground;
+  }
+
+  .badge-draft {
+    @apply badge-secondary;
+  }
+
+  .badge-approved {
+    @apply badge-success;
+  }
+
+  .badge-active {
+    @apply badge-default;
+  }
+
+  .badge-closed {
+    @apply badge-outline;
+  }
+
+  .badge-issued {
+    @apply badge border-transparent bg-accent text-accent-foreground;
+  }
+
+  /* shadcn Tabs */
+  .tab-nav {
+    @apply inline-flex h-auto min-h-9 w-full max-w-full flex-wrap items-center justify-start gap-1 overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground sm:flex-nowrap;
+  }
+
+  .tab-link {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
+  .tab-link-active {
+    @apply bg-background text-foreground shadow;
+  }
+
+  /* shadcn Alert */
+  .alert {
+    @apply relative mb-4 w-full rounded-lg border px-4 py-3 text-sm;
+  }
+
+  .alert-success {
+    @apply alert border-success/50 text-success [&>svg]:text-success;
+  }
+
+  .alert-error {
+    @apply alert border-destructive/50 text-destructive [&>svg]:text-destructive;
+  }
+
+  .empty-state {
+    @apply flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/40 px-6 py-16 text-center;
+  }
+
+  /* shadcn Dialog */
+  .modal-backdrop {
+    @apply fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-0 sm:items-center sm:p-4;
+  }
+
+  .modal-panel {
+    @apply w-full max-w-lg rounded-t-lg border bg-background shadow-lg animate-in fade-in-0 zoom-in-95 sm:rounded-lg;
+  }
+
+  .modal-panel-lg {
+    @apply max-w-2xl;
+  }
+
+  .modal-header {
+    @apply flex flex-col space-y-1.5 border-b p-6 text-center sm:text-left;
+  }
+
+  .modal-body {
+    @apply p-6;
+  }
+
+  .modal-footer {
+    @apply flex flex-col-reverse gap-2 border-t p-6 sm:flex-row sm:justify-end;
+  }
+
+  .metric-grid {
+    @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .link-primary {
+    @apply font-medium text-primary underline-offset-4 hover:underline;
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-md bg-muted;
+  }
+
+  .sheet-overlay {
+    @apply fixed inset-0 z-40 bg-black/80 md:hidden;
+    top: var(--portal-banner-height);
+  }
+
+  .logo-mark {
+    @apply relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary text-primary-foreground shadow-sm ring-1 ring-border/60;
+  }
+
+  .logo-mark-sm {
+    @apply h-8 w-8 rounded-lg p-1;
+  }
+
+  .logo-mark-md {
+    @apply h-10 w-10 p-1.5;
+  }
+
+  .logo-mark-lg {
+    @apply h-14 w-14 rounded-2xl p-2 shadow-md;
+  }
+
+  .logo-mark-inverse {
+    @apply bg-primary-foreground/10 text-primary-foreground ring-primary-foreground/25;
+  }
+}
+
+#blazor-error-ui {
+  @apply fixed bottom-0 left-0 z-[9999] hidden w-full border-t bg-background px-4 py-3 text-foreground shadow-lg;
+}
+
+#blazor-error-ui .reload {
+  @apply ml-2 font-medium underline;
+}
+
+#blazor-error-ui .dismiss {
+  @apply absolute right-3 top-3 cursor-pointer;
+}

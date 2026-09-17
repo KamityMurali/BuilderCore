@@ -1,4 +1,4 @@
-# BuilderPOC Coding Instructions
+# BuilderCore Coding Instructions
 
 ## Stack
 - .NET 10

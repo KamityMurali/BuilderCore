@@ -1,0 +1,96 @@
+@page "/"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject IJobCostService JobCostService
+
+<PageTitle>Dashboard</PageTitle>
+
+<PageHeader Title="Dashboard" Subtitle="Overview of jobs, estimates, and purchasing activity.">
+    <Actions>
+        <a href="/estimates/new" class="btn-primary">+ New Estimate</a>
+    </Actions>
+</PageHeader>
+
+@if (loading)
+{
+    <LoadingState Message="Loading dashboard..." />
+}
+else if (stats is not null)
+{
+    <div class="metric-grid mb-8">
+        <StatCard Label="Active Jobs" Value="@stats.ActiveJobs.ToString()" Hint="Currently in progress">
+            <Icon>
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            </Icon>
+        </StatCard>
+        <StatCard Label="Draft Estimates" Value="@stats.DraftEstimates.ToString()" Hint="Awaiting approval">
+            <Icon>
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </Icon>
+        </StatCard>
+        <StatCard Label="Open POs" Value="@stats.OpenPurchaseOrders.ToString()" Hint="Draft or issued">
+            <Icon>
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </Icon>
+        </StatCard>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-lg font-semibold">Recent Jobs</h2>
+                <a href="/jobs" class="link-primary text-sm">View all</a>
+            </div>
+
+            @if (stats.RecentJobs.Count == 0)
+            {
+                <EmptyState Title="No jobs yet" Description="Approve an estimate and create a job to see financial activity here.">
+                    <Actions>
+                        <a href="/estimates" class="btn-primary">Go to Estimates</a>
+                    </Actions>
+                </EmptyState>
+            }
+            else
+            {
+                <div class="data-table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Job</th>
+                                <th>Name</th>
+                                <th class="text-currency">Budget</th>
+                                <th class="text-currency">Committed</th>
+                                <th class="text-currency">Actual</th>
+                                <th class="text-currency">Variance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var job in stats.RecentJobs)
+                            {
+                                <tr>
+                                    <td><a class="link-primary" href="@($"/jobs/{job.JobId}")">@job.JobNumber</a></td>
+                                    <td class="font-medium">@job.JobName</td>
+                                    <td class="text-currency">@CurrencyHelper.Format(job.Budget)</td>
+                                    <td class="text-currency">@CurrencyHelper.Format(job.Committed)</td>
+                                    <td class="text-currency">@CurrencyHelper.Format(job.Actual)</td>
+                                    <td class="text-currency @(job.Variance < 0 ? "text-destructive" : "text-success")">@CurrencyHelper.Format(job.Variance)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private DashboardStats? stats;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        stats = await JobCostService.GetDashboardStatsAsync();
+        loading = false;
+    }
+}

@@ -25,7 +25,7 @@ Example configuration:
     "Enabled": true
   },
   "ConnectionStrings": {
-    "DefaultConnection": "Data Source=builderpoc.db"
+    "DefaultConnection": "Data Source=buildercore.db"
   }
 }
 ```

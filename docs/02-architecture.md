@@ -4,14 +4,14 @@
 Use a modular monolith: .NET 10 Blazor Web App (Interactive Server), application services, focused Dapper data-access classes, SQLite, SignalR, and switchable Development/Cognito authentication.
 
 ```text
-Browser -> Blazor Server -> Application Services -> Dapper -> Microsoft.Data.Sqlite -> builderpoc.db
+Browser -> Blazor Server -> Application Services -> Dapper -> Microsoft.Data.Sqlite -> buildercore.db
                               |                    \-> JobCostHub
                               \-> ICurrentUserService -> Local Dev Auth / Cognito OIDC
 ```
 
 ## 2. Structure
 ```text
-src/BuilderPOC.Web/
+src/BuilderCore.Web/
   Components/
   Data/
     ISqliteConnectionFactory.cs
@@ -45,7 +45,7 @@ src/BuilderPOC.Web/
 ## 4. Database initialization
 `DatabaseInitializer` creates the database file if absent and applies versioned scripts from `database/` using a `SchemaVersion` table. Scripts must be idempotent or tracked so they execute once. In Development, initialize schema, master seed, then optional demo seed. Production never auto-enables demo data.
 
-Default local connection string: `Data Source=builderpoc.db;Foreign Keys=True`.
+Default local connection string: `Data Source=buildercore.db;Foreign Keys=True`.
 
 ## 5. Transactions
 Use explicit `SqliteTransaction` for Estimate approval, Job creation/budget snapshot, PO issue/close, and actual-cost posting. SignalR notification occurs only after a successful commit.

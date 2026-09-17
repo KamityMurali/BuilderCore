@@ -13,7 +13,7 @@ All required tests must pass.
 
 ## Run
 ```bash
-dotnet run --project src/BuilderPOC.Web
+dotnet run --project src/BuilderCore.Web
 ```
 
 ## Authentication
@@ -22,7 +22,7 @@ dotnet run --project src/BuilderPOC.Web
 - Development authentication cannot be enabled outside Development.
 
 ## Database
-- `builderpoc.db` is created automatically.
+- `buildercore.db` is created automatically.
 - Schema initializes successfully.
 - Foreign keys are enabled.
 - Demo seeding is idempotent.

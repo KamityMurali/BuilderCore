@@ -1,0 +1,98 @@
+@page "/setup/cost-codes"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject ICostCodeService CostCodeService
+
+<PageTitle>Cost Codes</PageTitle>
+
+<PageHeader Title="Cost Codes" Subtitle="Maintain the cost code master list used across estimates, POs, and job costs." />
+
+<AlertMessage Message="@message" IsError="@isError" OnClear="ClearMessage" />
+
+<div class="grid gap-6 lg:grid-cols-5">
+    <div class="card lg:col-span-2">
+        <div class="card-body">
+            <h3 class="mb-4 text-lg font-semibold text-slate-900">@(editing.CostCodeId == 0 ? "Add Cost Code" : "Edit Cost Code")</h3>
+            <EditForm Model="editing" OnValidSubmit="SaveAsync" class="space-y-4">
+                <div>
+                    <label class="label">Code *</label>
+                    <InputText class="input" @bind-Value="editing.Code" />
+                </div>
+                <div>
+                    <label class="label">Description *</label>
+                    <InputText class="input" @bind-Value="editing.Description" />
+                </div>
+                <label class="flex items-center gap-2 text-sm text-slate-700">
+                    <InputCheckbox class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" @bind-Value="editing.IsActive" />
+                    Active
+                </label>
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" class="btn-primary" disabled="@busy">Save</button>
+                    @if (editing.CostCodeId != 0)
+                    {
+                        <button type="button" class="btn-secondary" @onclick="ResetForm">Cancel</button>
+                    }
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+    <div class="card lg:col-span-3">
+        <div class="data-table-wrap rounded-none border-0">
+            <table class="data-table">
+                <thead><tr><th>Code</th><th>Description</th><th>Active</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var item in costCodes)
+                    {
+                        <tr>
+                            <td class="font-semibold text-slate-900">@item.Code</td>
+                            <td>@item.Description</td>
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge-approved">Yes</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-draft">No</span>
+                                }
+                            </td>
+                            <td class="text-right"><button class="btn-secondary btn-sm" @onclick="() => Edit(item)">Edit</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<CostCode> costCodes = [];
+    private CostCode editing = new();
+    private bool busy;
+    private string? message;
+    private bool isError;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync() => costCodes = await CostCodeService.GetAllAsync();
+    private void Edit(CostCode item) => editing = new CostCode { CostCodeId = item.CostCodeId, Code = item.Code, Description = item.Description, IsActive = item.IsActive };
+    private void ResetForm() => editing = new CostCode();
+    private void ClearMessage() => message = null;
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        try
+        {
+            await CostCodeService.SaveAsync(editing);
+            message = "Cost code saved.";
+            isError = false;
+            editing = new CostCode();
+            await LoadAsync();
+        }
+        catch (ValidationException ex) { isError = true; message = ex.Message; }
+        catch (Exception) { isError = true; message = "An unexpected error occurred."; }
+        finally { busy = false; }
+    }
+}

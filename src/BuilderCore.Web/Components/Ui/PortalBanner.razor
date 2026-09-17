@@ -1,0 +1,42 @@
+@inject ICurrentUserService CurrentUser
+@inject IConfiguration Configuration
+@inject IWebHostEnvironment Environment
+
+<header class="portal-banner">
+    <div class="portal-banner-grid" aria-hidden="true"></div>
+    <div class="portal-banner-accent" aria-hidden="true"></div>
+
+    <div class="portal-banner-inner">
+        <div class="flex min-w-0 items-center gap-2 sm:gap-3">
+            <button type="button" class="portal-banner-icon-btn md:hidden" @onclick="OnMenuClick" aria-label="Open menu">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <a href="/" class="min-w-0 shrink-0">
+                <Logo Size="Logo.LogoSize.Md" Tagline="Cost Control Platform" Tone="Logo.LogoTone.Inverse" />
+            </a>
+        </div>
+
+        <p class="portal-banner-tagline hidden min-w-0 flex-1 px-4 text-center lg:block">
+            Estimate · Approve · Build · Purchase · Track Variance
+        </p>
+
+        <div class="flex shrink-0 items-center gap-2">
+            @if (Environment.IsDevelopment())
+            {
+                <span class="portal-banner-badge hidden sm:inline-flex">Dev Portal</span>
+            }
+            <ThemeToggle Class="portal-banner-icon-btn" />
+            <div class="portal-banner-avatar hidden sm:flex" title="@CurrentUser.DisplayName">
+                @(CurrentUser.DisplayName.Length > 0 ? CurrentUser.DisplayName[0] : '?')
+            </div>
+            @if (string.Equals(Configuration["Authentication:Mode"], "Cognito", StringComparison.OrdinalIgnoreCase))
+            {
+                <a class="portal-banner-link hidden sm:inline-flex" href="/logout">Sign out</a>
+            }
+        </div>
+    </div>
+</header>
+
+@code {
+    [Parameter] public EventCallback OnMenuClick { get; set; }
+}

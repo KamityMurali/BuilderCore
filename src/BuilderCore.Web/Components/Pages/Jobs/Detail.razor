@@ -1,0 +1,409 @@
+@page "/jobs/{JobId:int}"
+@page "/jobs/{JobId:int}/{Tab}"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject IJobService JobService
+@inject IJobCostService JobCostService
+@inject IPurchaseOrderService PurchaseOrderService
+@inject ICostCodeService CostCodeService
+@inject IVendorService VendorService
+@inject NavigationManager Navigation
+@using BuilderCore.Web.Hubs
+@implements IAsyncDisposable
+
+<PageTitle>@job?.JobNumber</PageTitle>
+
+@if (loading)
+{
+    <LoadingState Message="Loading job..." />
+}
+else if (job is not null)
+{
+    <PageHeader Title="@job.JobNumber" Subtitle="@job.JobName">
+        <Actions>
+            <StatusBadge Status="@job.Status" />
+            @if (job.Status == "Active" && activeTab == "overview")
+            {
+                <button class="btn-danger" @onclick="() => showCloseConfirm = true" disabled="@busy">Close Job</button>
+            }
+        </Actions>
+    </PageHeader>
+
+    <AlertMessage Message="@message" IsError="@isError" OnClear="ClearMessage" />
+
+    <nav class="tab-nav mb-6">
+        @foreach (var tab in tabs)
+        {
+            <a class="@(activeTab == tab.Key ? "tab-link tab-link-active" : "tab-link")" href="@($"/jobs/{JobId}/{tab.Key}")">@tab.Value</a>
+        }
+    </nav>
+
+    @switch (activeTab)
+    {
+        case "overview":
+            @if (summary is not null)
+            {
+                <div class="metric-grid mb-6">
+                    <StatCard Label="Budget" Value="@CurrencyHelper.Format(summary.Budget)" />
+                    <StatCard Label="Committed" Value="@CurrencyHelper.Format(summary.Committed)" />
+                    <StatCard Label="Actual" Value="@CurrencyHelper.Format(summary.Actual)" />
+                    <StatCard Label="Variance" Value="@CurrencyHelper.Format(summary.Variance)" />
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <dl class="grid gap-4 sm:grid-cols-2">
+                            <div><dt class="text-xs font-semibold uppercase text-muted-foreground">Estimate</dt><dd class="mt-1 font-medium">@job.EstimateNumber</dd></div>
+                            <div><dt class="text-xs font-semibold uppercase text-muted-foreground">Job Name</dt><dd class="mt-1 font-medium">@job.JobName</dd></div>
+                        </dl>
+                    </div>
+                </div>
+            }
+            break;
+        case "budget":
+            <div class="card">
+                <div class="data-table-wrap rounded-none border-0">
+                    <table class="data-table">
+                        <thead><tr><th>Cost Code</th><th>Description</th><th class="text-currency">Budget</th></tr></thead>
+                        <tbody>
+                            @foreach (var line in budgetLines)
+                            {
+                                <tr>
+                                    <td class="font-medium">@line.CostCode</td>
+                                    <td>@line.Description</td>
+                                    <td class="text-currency">@CurrencyHelper.Format(line.BudgetAmount)</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2">Total</td>
+                                <td class="text-currency">@CurrencyHelper.Format(budgetLines.Sum(l => l.BudgetAmount))</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            break;
+        case "purchase-orders":
+            <div class="mb-4 flex justify-end">
+                @if (job.Status == "Active")
+                {
+                    <a class="btn-primary" href="@($"/purchase-orders/new?jobId={JobId}")">+ New PO</a>
+                }
+            </div>
+            <div class="card">
+                <div class="data-table-wrap rounded-none border-0">
+                    <table class="data-table">
+                        <thead><tr><th>PO</th><th>Vendor</th><th>Status</th><th class="text-currency">Total</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var po in purchaseOrders)
+                            {
+                                <tr>
+                                    <td class="font-semibold">@po.PONumber</td>
+                                    <td>@po.VendorName</td>
+                                    <td><StatusBadge Status="@po.Status" /></td>
+                                    <td class="text-currency">@CurrencyHelper.Format(poTotals.GetValueOrDefault(po.PurchaseOrderId))</td>
+                                    <td class="text-right"><a class="btn-secondary btn-sm" href="@($"/purchase-orders/{po.PurchaseOrderId}")">Open</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            break;
+        case "actual-costs":
+            <div class="mb-4 flex justify-end">
+                @if (job.Status == "Active")
+                {
+                    <button class="btn-primary" @onclick="() => showAddCost = true">+ Add Cost</button>
+                }
+            </div>
+            <div class="card">
+                <div class="data-table-wrap rounded-none border-0">
+                    <table class="data-table">
+                        <thead><tr><th>Date</th><th>Cost Code</th><th>Vendor</th><th>PO</th><th>Reference</th><th>Description</th><th class="text-currency">Amount</th></tr></thead>
+                        <tbody>
+                            @foreach (var tx in transactions)
+                            {
+                                <tr>
+                                    <td>@tx.TransactionDate.ToString("MM/dd/yyyy")</td>
+                                    <td>@tx.CostCode</td>
+                                    <td>@tx.VendorName</td>
+                                    <td>@tx.PONumber</td>
+                                    <td>@tx.ReferenceNumber</td>
+                                    <td>@tx.Description</td>
+                                    <td class="text-currency font-medium">@CurrencyHelper.Format(tx.Amount)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            break;
+        case "job-cost":
+            @if (summary is not null)
+            {
+                <div class="metric-grid mb-6">
+                    <StatCard Label="Budget" Value="@CurrencyHelper.Format(summary.Budget)" />
+                    <StatCard Label="Committed" Value="@CurrencyHelper.Format(summary.Committed)" />
+                    <StatCard Label="Actual" Value="@CurrencyHelper.Format(summary.Actual)" />
+                    <StatCard Label="Variance" Value="@CurrencyHelper.Format(summary.Variance)" />
+                </div>
+                <div class="card">
+                    <div class="data-table-wrap rounded-none border-0">
+                        <table class="data-table">
+                            <thead><tr><th>Cost Code</th><th>Description</th><th class="text-currency">Budget</th><th class="text-currency">Committed</th><th class="text-currency">Actual</th><th class="text-currency">Variance</th></tr></thead>
+                            <tbody>
+                                @foreach (var line in summary.Lines)
+                                {
+                                    <tr>
+                                        <td class="font-medium">@line.CostCode</td>
+                                        <td>@line.Description</td>
+                                        <td class="text-currency">@CurrencyHelper.Format(line.Budget)</td>
+                                        <td class="text-currency">@CurrencyHelper.Format(line.Committed)</td>
+                                        <td class="text-currency">@CurrencyHelper.Format(line.Actual)</td>
+                                        <td class="text-currency @(line.Variance < 0 ? "text-rose-600 font-semibold" : "")">@CurrencyHelper.Format(line.Variance)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2">TOTAL</td>
+                                    <td class="text-currency">@CurrencyHelper.Format(summary.Budget)</td>
+                                    <td class="text-currency">@CurrencyHelper.Format(summary.Committed)</td>
+                                    <td class="text-currency">@CurrencyHelper.Format(summary.Actual)</td>
+                                    <td class="text-currency">@CurrencyHelper.Format(summary.Variance)</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <p class="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span class="inline-flex h-2 w-2 animate-pulse rounded-full bg-emerald-500"></span>
+                    Last refreshed: @lastRefreshed.ToLocalTime().ToString("T") — updates live via SignalR
+                </p>
+            }
+            break;
+    }
+
+    <Modal Visible="@showCloseConfirm" Title="@($"Close {job.JobNumber}?")" OnClose="() => showCloseConfirm = false">
+        <ChildContent><p class="text-sm text-muted-foreground">Closed jobs reject new purchase orders and actual cost activity.</p></ChildContent>
+        <Footer>
+            <button class="btn-secondary" @onclick="() => showCloseConfirm = false">Cancel</button>
+            <button class="btn-danger" @onclick="CloseJobAsync" disabled="@busy">Close Job</button>
+        </Footer>
+    </Modal>
+
+    <Modal Visible="@showAddCost" Title="Add Actual Cost" Large="true" OnClose="() => showAddCost = false">
+        <ChildContent>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="label">Date *</label>
+                    <InputDate class="input" @bind-Value="newCostDate" />
+                </div>
+                <div>
+                    <label class="label">Cost Code *</label>
+                    <InputSelect class="select" @bind-Value="newCost.CostCodeId">
+                        <option value="0">Select...</option>
+                        @foreach (var cc in costCodes)
+                        {
+                            <option value="@cc.CostCodeId">@cc.Code - @cc.Description</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div>
+                    <label class="label">Vendor</label>
+                    <InputSelect class="select" @bind-Value="selectedVendorId">
+                        <option value="">Optional</option>
+                        @foreach (var v in vendors)
+                        {
+                            <option value="@v.VendorId">@v.VendorName</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div>
+                    <label class="label">PO</label>
+                    <InputSelect class="select" @bind-Value="selectedPurchaseOrderId">
+                        <option value="">Optional</option>
+                        @foreach (var po in purchaseOrders)
+                        {
+                            <option value="@po.PurchaseOrderId">@po.PONumber</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div>
+                    <label class="label">Reference</label>
+                    <InputText class="input" @bind-Value="newCost.ReferenceNumber" />
+                </div>
+                <div>
+                    <label class="label">Amount *</label>
+                    <InputNumber class="input" @bind-Value="newCost.Amount" />
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="label">Description</label>
+                    <InputTextArea class="input" @bind-Value="newCost.Description" rows="2" />
+                </div>
+            </div>
+        </ChildContent>
+        <Footer>
+            <button class="btn-secondary" @onclick="() => showAddCost = false">Cancel</button>
+            <button class="btn-primary" @onclick="PostCostAsync" disabled="@busy">Post Cost</button>
+        </Footer>
+    </Modal>
+}
+
+@code {
+    [Parameter] public int JobId { get; set; }
+    [Parameter] public string? Tab { get; set; }
+
+    private static readonly Dictionary<string, string> tabs = new()
+    {
+        ["overview"] = "Overview",
+        ["budget"] = "Budget",
+        ["purchase-orders"] = "Purchase Orders",
+        ["actual-costs"] = "Actual Costs",
+        ["job-cost"] = "Job Cost"
+    };
+
+    private Job? job;
+    private JobCostSummaryDto? summary;
+    private IReadOnlyList<JobBudgetLine> budgetLines = [];
+    private IReadOnlyList<PurchaseOrder> purchaseOrders = [];
+    private Dictionary<int, decimal> poTotals = new();
+    private IReadOnlyList<JobCostTransaction> transactions = [];
+    private IReadOnlyList<CostCode> costCodes = [];
+    private IReadOnlyList<Vendor> vendors = [];
+    private HubConnection? hubConnection;
+    private DateTime lastRefreshed = DateTime.UtcNow;
+    private string activeTab = "overview";
+    private bool loading = true;
+    private bool busy;
+    private bool showCloseConfirm;
+    private bool showAddCost;
+    private string? message;
+    private bool isError;
+    private JobCostTransaction newCost = new();
+    private DateTime newCostDate = DateTime.Today;
+    private string selectedVendorId = string.Empty;
+    private string selectedPurchaseOrderId = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        activeTab = string.IsNullOrWhiteSpace(Tab) ? "overview" : Tab.ToLowerInvariant();
+        if (!tabs.ContainsKey(activeTab))
+        {
+            activeTab = "overview";
+        }
+
+        await LoadAsync();
+
+        if (activeTab == "job-cost")
+        {
+            await EnsureHubAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        loading = true;
+        job = await JobService.GetByIdAsync(JobId);
+        if (job is null)
+        {
+            Navigation.NavigateTo("/jobs");
+            return;
+        }
+
+        summary = await JobCostService.GetSummaryAsync(JobId);
+        budgetLines = await JobService.GetBudgetLinesAsync(JobId);
+        purchaseOrders = await PurchaseOrderService.GetByJobIdAsync(JobId);
+        poTotals = new Dictionary<int, decimal>();
+        foreach (var po in purchaseOrders)
+        {
+            poTotals[po.PurchaseOrderId] = await PurchaseOrderService.GetTotalAsync(po.PurchaseOrderId);
+        }
+        transactions = await JobCostService.GetTransactionsAsync(JobId);
+        costCodes = await CostCodeService.GetActiveAsync();
+        vendors = await VendorService.GetActiveAsync();
+        lastRefreshed = DateTime.UtcNow;
+        loading = false;
+    }
+
+    private async Task EnsureHubAsync()
+    {
+        if (hubConnection is not null)
+        {
+            return;
+        }
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/hubs/jobcost"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<JobCostUpdatedMessage>("JobCostUpdated", async payload =>
+        {
+            if (payload.JobId == JobId)
+            {
+                summary = await JobCostService.GetSummaryAsync(JobId);
+                lastRefreshed = DateTime.UtcNow;
+                await InvokeAsync(StateHasChanged);
+            }
+        });
+
+        await hubConnection.StartAsync();
+        await hubConnection.SendAsync("JoinJobGroup", JobId);
+    }
+
+    private void ClearMessage() => message = null;
+
+    private async Task CloseJobAsync()
+    {
+        busy = true;
+        try
+        {
+            await JobService.CloseAsync(job!.JobId, job.Version);
+            showCloseConfirm = false;
+            await LoadAsync();
+            message = "Job closed.";
+            isError = false;
+        }
+        catch (ValidationException ex) { isError = true; message = ex.Message; }
+        catch (DbUpdateConcurrencyException) { isError = true; message = DbUpdateConcurrencyException.UserMessage; await LoadAsync(); }
+        catch (Exception) { isError = true; message = "An unexpected error occurred."; }
+        finally { busy = false; }
+    }
+
+    private async Task PostCostAsync()
+    {
+        busy = true;
+        message = null;
+        try
+        {
+            newCost.JobId = JobId;
+            newCost.TransactionDate = DateOnly.FromDateTime(newCostDate);
+            newCost.VendorId = int.TryParse(selectedVendorId, out var vendorId) ? vendorId : null;
+            newCost.PurchaseOrderId = int.TryParse(selectedPurchaseOrderId, out var poId) ? poId : null;
+            await JobCostService.PostActualCostAsync(newCost);
+            showAddCost = false;
+            newCost = new JobCostTransaction();
+            newCostDate = DateTime.Today;
+            selectedVendorId = string.Empty;
+            selectedPurchaseOrderId = string.Empty;
+            await LoadAsync();
+            message = "Actual cost posted.";
+            isError = false;
+        }
+        catch (ValidationException ex) { isError = true; message = ex.Message; }
+        catch (Exception) { isError = true; message = "An unexpected error occurred."; }
+        finally { busy = false; }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.SendAsync("LeaveJobGroup", JobId);
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

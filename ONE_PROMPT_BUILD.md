@@ -1,4 +1,4 @@
-# ONE-PROMPT BUILD INSTRUCTIONS — BuilderPOC
+# ONE-PROMPT BUILD INSTRUCTIONS — BuilderCore
 
 You are the senior .NET engineer responsible for implementing this entire POC end-to-end in one autonomous coding session.
 
@@ -95,9 +95,9 @@ Do NOT add:
 Create:
 
 ```text
-BuilderPOC.sln
+BuilderCore.sln
 src/
-  BuilderPOC.Web/
+  BuilderCore.Web/
     Components/
       Layout/
       Pages/
@@ -120,7 +120,7 @@ src/
     appsettings.json
     appsettings.Development.json
 tests/
-  BuilderPOC.Tests/
+  BuilderCore.Tests/
 database/
   001_schema.sql
   002_seed.sql
@@ -142,7 +142,7 @@ Required packages:
 
 Do NOT add Entity Framework Core or any ORM.
 
-Implement `ISqliteConnectionFactory`/`SqliteConnectionFactory` and a `DatabaseInitializer`. Default Development connection string: `Data Source=builderpoc.db;Foreign Keys=True`. The initializer must create/upgrade the local database from versioned SQL scripts and be safe to run repeatedly.
+Implement `ISqliteConnectionFactory`/`SqliteConnectionFactory` and a `DatabaseInitializer`. Default Development connection string: `Data Source=buildercore.db;Foreign Keys=True`. The initializer must create/upgrade the local database from versioned SQL scripts and be safe to run repeatedly.
 
 Use explicit SQL and focused data-access/repository classes. Do not use a generic repository. All SQL must be parameterized. Use `CommandDefinition` and cancellation tokens where practical.
 
@@ -167,7 +167,7 @@ When BOTH conditions are true:
 
 use a local development authentication handler that creates an authenticated principal with:
 - `sub = local-dev-user`
-- `email = developer@builderpoc.local`
+- `email = developer@buildercore.local`
 - `name = POC Developer`
 
 ### `Cognito`

@@ -1,0 +1,25 @@
+<div class="stat-card">
+    <div class="flex items-start justify-between gap-4">
+        <div class="space-y-1">
+            <p class="text-sm font-medium text-muted-foreground">@Label</p>
+            <p class="text-2xl font-bold tracking-tight">@Value</p>
+            @if (!string.IsNullOrWhiteSpace(Hint))
+            {
+                <p class="text-xs text-muted-foreground">@Hint</p>
+            }
+        </div>
+        @if (Icon is not null)
+        {
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                @Icon
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Value { get; set; } = string.Empty;
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public RenderFragment? Icon { get; set; }
+}

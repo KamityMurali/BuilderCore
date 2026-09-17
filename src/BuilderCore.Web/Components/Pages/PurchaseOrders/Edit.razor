@@ -1,0 +1,264 @@
+@page "/purchase-orders/new"
+@page "/purchase-orders/{PurchaseOrderId:int}"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject IPurchaseOrderService PurchaseOrderService
+@inject IJobService JobService
+@inject IVendorService VendorService
+@inject ICostCodeService CostCodeService
+@inject NavigationManager Navigation
+
+<PageTitle>@(IsNew ? "New PO" : purchaseOrder?.PONumber)</PageTitle>
+
+@if (loading)
+{
+    <LoadingState Message="Loading purchase order..." ShowSkeleton="false" />
+}
+else if (purchaseOrder is not null)
+{
+    <PageHeader Title="@purchaseOrder.PONumber" Subtitle="@($"{purchaseOrder.JobNumber} · {purchaseOrder.VendorName}")">
+        <Actions><StatusBadge Status="@purchaseOrder.Status" /></Actions>
+    </PageHeader>
+
+    <AlertMessage Message="@message" IsError="@isError" OnClear="ClearMessage" />
+
+    @if (IsReadOnly)
+    {
+        <div class="card mb-6">
+            <div class="card-body grid gap-4 sm:grid-cols-2">
+                <div><div class="text-xs font-semibold uppercase text-slate-500">Job</div><div class="mt-1 font-medium">@purchaseOrder.JobNumber — @purchaseOrder.JobName</div></div>
+                <div><div class="text-xs font-semibold uppercase text-slate-500">Vendor</div><div class="mt-1 font-medium">@purchaseOrder.VendorName</div></div>
+            </div>
+        </div>
+        <div class="card mb-6">
+            <div class="data-table-wrap rounded-none border-0">
+                <table class="data-table">
+                    <thead><tr><th>Cost Code</th><th>Description</th><th class="text-currency">Amount</th></tr></thead>
+                    <tbody>
+                        @foreach (var line in lines)
+                        {
+                            <tr>
+                                <td class="font-medium">@line.CostCode</td>
+                                <td>@line.Description</td>
+                                <td class="text-currency">@CurrencyHelper.Format(line.Amount)</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr><td colspan="2">Total</td><td class="text-currency">@CurrencyHelper.Format(Total)</td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        @if (purchaseOrder.Status == "Issued")
+        {
+            <button class="btn-warning" @onclick="() => showCloseConfirm = true" disabled="@busy">Close PO</button>
+        }
+    }
+    else
+    {
+        <EditForm Model="purchaseOrder" OnValidSubmit="SaveAsync">
+            <div class="card mb-6">
+                <div class="card-body grid gap-4 sm:grid-cols-3">
+                    <div>
+                        <label class="label">PO Number *</label>
+                        <InputText class="input" @bind-Value="purchaseOrder.PONumber" disabled="@(!IsNew)" />
+                    </div>
+                    <div>
+                        <label class="label">Job *</label>
+                        <InputSelect class="select" @bind-Value="purchaseOrder.JobId">
+                            <option value="0">Select...</option>
+                            @foreach (var job in activeJobs)
+                            {
+                                <option value="@job.JobId">@job.JobNumber - @job.JobName</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div>
+                        <label class="label">Vendor *</label>
+                        <InputSelect class="select" @bind-Value="purchaseOrder.VendorId">
+                            <option value="0">Select...</option>
+                            @foreach (var vendor in vendors)
+                            {
+                                <option value="@vendor.VendorId">@vendor.VendorName</option>
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-6">
+                <div class="card-body">
+                    <div class="mb-4 flex items-center justify-between">
+                        <h3 class="font-semibold text-slate-900">PO Lines</h3>
+                        <button type="button" class="btn-secondary btn-sm" @onclick="AddLine">+ Add Line</button>
+                    </div>
+                    <div class="data-table-wrap">
+                        <table class="data-table">
+                            <thead><tr><th>Cost Code</th><th>Description</th><th class="text-currency">Amount</th><th></th></tr></thead>
+                            <tbody>
+                                @for (var i = 0; i < lines.Count; i++)
+                                {
+                                    var index = i;
+                                    <tr>
+                                        <td>
+                                            <InputSelect class="select" @bind-Value="lines[index].CostCodeId">
+                                                <option value="0">Select...</option>
+                                                @foreach (var cc in costCodes)
+                                                {
+                                                    <option value="@cc.CostCodeId">@cc.Code</option>
+                                                }
+                                            </InputSelect>
+                                        </td>
+                                        <td><InputText class="input" @bind-Value="lines[index].Description" /></td>
+                                        <td><InputNumber class="input text-currency" @bind-Value="lines[index].Amount" /></td>
+                                        <td><button type="button" class="btn-danger btn-sm" @onclick="() => RemoveLine(index)">Remove</button></td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr><td colspan="2">Total</td><td class="text-currency text-brand-700">@CurrencyHelper.Format(Total)</td><td></td></tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit" class="btn-primary" disabled="@busy">Save Draft</button>
+                @if (!IsNew)
+                {
+                    <button type="button" class="btn-success" @onclick="() => showIssueConfirm = true" disabled="@busy">Issue PO</button>
+                }
+            </div>
+        </EditForm>
+    }
+
+    <Modal Visible="@showIssueConfirm" Title="@($"Issue {purchaseOrder.PONumber}?")" OnClose="() => showIssueConfirm = false">
+        <ChildContent><p class="text-sm text-slate-600">Issued POs become read-only and contribute to committed job cost.</p></ChildContent>
+        <Footer>
+            <button class="btn-secondary" @onclick="() => showIssueConfirm = false">Cancel</button>
+            <button class="btn-success" @onclick="IssueAsync" disabled="@busy">Issue</button>
+        </Footer>
+    </Modal>
+
+    <Modal Visible="@showCloseConfirm" Title="@($"Close {purchaseOrder.PONumber}?")" OnClose="() => showCloseConfirm = false">
+        <ChildContent><p class="text-sm text-slate-600">Closed POs remain included in committed totals.</p></ChildContent>
+        <Footer>
+            <button class="btn-secondary" @onclick="() => showCloseConfirm = false">Cancel</button>
+            <button class="btn-warning" @onclick="CloseAsync" disabled="@busy">Close</button>
+        </Footer>
+    </Modal>
+}
+
+@code {
+    [Parameter] public int PurchaseOrderId { get; set; }
+    [SupplyParameterFromQuery] public int? JobId { get; set; }
+
+    private PurchaseOrder? purchaseOrder;
+    private List<PurchaseOrderLine> lines = [];
+    private IReadOnlyList<Job> activeJobs = [];
+    private IReadOnlyList<Vendor> vendors = [];
+    private IReadOnlyList<CostCode> costCodes = [];
+    private bool loading = true;
+    private bool busy;
+    private bool showIssueConfirm;
+    private bool showCloseConfirm;
+    private string? message;
+    private bool isError;
+
+    private bool IsNew => PurchaseOrderId == 0;
+    private bool IsReadOnly => purchaseOrder?.Status is "Issued" or "Closed";
+    private decimal Total => lines.Sum(l => l.Amount);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var allJobs = await JobService.GetAllAsync();
+        activeJobs = allJobs.Where(j => j.Status == "Active").ToList();
+        vendors = await VendorService.GetActiveAsync();
+        costCodes = await CostCodeService.GetActiveAsync();
+
+        if (IsNew)
+        {
+            purchaseOrder = new PurchaseOrder
+            {
+                PONumber = $"PO-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                JobId = JobId ?? 0
+            };
+            lines.Add(new PurchaseOrderLine());
+        }
+        else
+        {
+            purchaseOrder = await PurchaseOrderService.GetByIdAsync(PurchaseOrderId);
+            if (purchaseOrder is null)
+            {
+                Navigation.NavigateTo("/purchase-orders");
+                return;
+            }
+            lines = (await PurchaseOrderService.GetLinesAsync(PurchaseOrderId)).ToList();
+        }
+        loading = false;
+    }
+
+    private void AddLine() => lines.Add(new PurchaseOrderLine());
+    private void RemoveLine(int index) => lines.RemoveAt(index);
+    private void ClearMessage() => message = null;
+
+    private async Task SaveAsync()
+    {
+        busy = true;
+        message = null;
+        try
+        {
+            var id = await PurchaseOrderService.SaveAsync(purchaseOrder!, lines);
+            if (IsNew)
+            {
+                Navigation.NavigateTo($"/purchase-orders/{id}");
+                return;
+            }
+            purchaseOrder = await PurchaseOrderService.GetByIdAsync(id);
+            message = "Purchase order saved.";
+            isError = false;
+        }
+        catch (ValidationException ex) { isError = true; message = ex.Message; }
+        catch (DbUpdateConcurrencyException) { isError = true; message = DbUpdateConcurrencyException.UserMessage; purchaseOrder = await PurchaseOrderService.GetByIdAsync(PurchaseOrderId); }
+        catch (Exception) { isError = true; message = "An unexpected error occurred."; }
+        finally { busy = false; }
+    }
+
+    private async Task IssueAsync()
+    {
+        busy = true;
+        try
+        {
+            await PurchaseOrderService.IssueAsync(purchaseOrder!.PurchaseOrderId, purchaseOrder.Version);
+            showIssueConfirm = false;
+            var issuedPoId = purchaseOrder!.PurchaseOrderId;
+            purchaseOrder = await PurchaseOrderService.GetByIdAsync(issuedPoId);
+            lines = (await PurchaseOrderService.GetLinesAsync(issuedPoId)).ToList();
+            message = "Purchase order issued.";
+            isError = false;
+        }
+        catch (ValidationException ex) { isError = true; message = ex.Message; }
+        catch (DbUpdateConcurrencyException) { isError = true; message = DbUpdateConcurrencyException.UserMessage; purchaseOrder = await PurchaseOrderService.GetByIdAsync(PurchaseOrderId); }
+        catch (Exception) { isError = true; message = "An unexpected error occurred."; }
+        finally { busy = false; }
+    }
+
+    private async Task CloseAsync()
+    {
+        busy = true;
+        try
+        {
+            await PurchaseOrderService.CloseAsync(purchaseOrder!.PurchaseOrderId, purchaseOrder.Version);
+            showCloseConfirm = false;
+            purchaseOrder = await PurchaseOrderService.GetByIdAsync(purchaseOrder.PurchaseOrderId);
+            message = "Purchase order closed.";
+            isError = false;
+        }
+        catch (ValidationException ex) { isError = true; message = ex.Message; }
+        catch (DbUpdateConcurrencyException) { isError = true; message = DbUpdateConcurrencyException.UserMessage; purchaseOrder = await PurchaseOrderService.GetByIdAsync(PurchaseOrderId); }
+        catch (Exception) { isError = true; message = "An unexpected error occurred."; }
+        finally { busy = false; }
+    }
+}
