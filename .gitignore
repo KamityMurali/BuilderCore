@@ -1,0 +1,30 @@
+# .NET
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# SQLite runtime files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Local secrets/config
+appsettings.Local.json
+secrets.json
+
+# IDE
+.idea/
+.vscode/*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test/build output
+TestResults/
+coverage/
+artifacts/
