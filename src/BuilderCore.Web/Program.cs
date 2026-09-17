@@ -56,18 +56,17 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
-app.UseAntiforgery();
-
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAntiforgery();
 
-var authMode = app.Configuration["Authentication:Mode"] ?? "Development";
-if (string.Equals(authMode, "Cognito", StringComparison.OrdinalIgnoreCase))
+var authMode = app.Configuration["Authentication:Mode"] ?? AuthenticationModes.Development;
+if (AuthenticationModes.UsesOpenIdConnect(authMode))
 {
     app.MapGet("/login", () => Results.Challenge(new Microsoft.AspNetCore.Authentication.AuthenticationProperties
     {
         RedirectUri = "/"
-    }, [OpenIdConnectDefaults.AuthenticationScheme]));
+    }, [OpenIdConnectDefaults.AuthenticationScheme])).AllowAnonymous();
 
     app.MapGet("/logout", () => Results.SignOut(new Microsoft.AspNetCore.Authentication.AuthenticationProperties
     {

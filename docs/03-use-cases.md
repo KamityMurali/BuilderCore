@@ -2,8 +2,8 @@
 
 ## UC-01 Sign in
 **Actor:** User  
-**Precondition:** Cognito user exists.  
-**Flow:** Open protected route → redirect to Cognito managed login → authenticate → redirect to app → authenticated session established.  
+**Precondition:** Entra user exists.  
+**Flow:** Open protected route → redirect to Microsoft Entra sign-in → authenticate → redirect to app → authenticated session established.  
 **Acceptance:** User sees application and email/name. Unauthenticated user cannot access business pages.
 
 ## UC-02 Maintain Cost Code

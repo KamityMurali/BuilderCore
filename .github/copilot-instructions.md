@@ -6,7 +6,7 @@
 - Blazor Interactive Server
 - Dapper + SQLite
 - SignalR
-- AWS Cognito OIDC
+- Azure Entra ID OIDC
 
 ## Mandatory rules
 - POC modular monolith; no microservices.
@@ -15,7 +15,7 @@
 - Use async/await and CancellationToken for I/O.
 - Use decimal for money.
 - UTC for persisted audit timestamps.
-- Use Cognito `sub` for audit user identity.
+- Use Entra `sub` for audit user identity.
 - Never store passwords or tokens in application DB.
 - Never commit secrets.
 - Approved Estimate is immutable.
@@ -31,7 +31,7 @@
 Do not add CRM, scheduling, accounting, invoices, payments, change orders, bidding, warranty, documents, mobile, multi-tenancy, CQRS/MediatR, message brokers, or forecasting unless explicitly requested.
 
 ## POC local execution
-- AWS Cognito is optional during initial POC development.
+- Azure Entra ID is optional during initial POC development.
 - Development auth is allowed only when environment=Development AND Authentication:Mode=Development.
 - Fail startup if Development auth is configured outside Development.
 - SQLite is the required zero-setup POC database. Use Dapper + Microsoft.Data.Sqlite; do not add EF Core.

@@ -4,8 +4,8 @@
 @code {
     protected override void OnInitialized()
     {
-        var mode = Configuration["Authentication:Mode"] ?? "Development";
-        if (string.Equals(mode, "Cognito", StringComparison.OrdinalIgnoreCase))
+        var mode = Configuration["Authentication:Mode"] ?? AuthenticationModes.Development;
+        if (AuthenticationModes.UsesOpenIdConnect(mode))
         {
             Navigation.NavigateTo("/login", forceLoad: true);
         }

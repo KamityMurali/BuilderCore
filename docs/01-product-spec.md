@@ -20,7 +20,7 @@ Creates jobs from approved estimates, posts actual costs, and reviews job cost.
 For the POC, any authenticated user may perform all actions. Authorization policies should still be isolated so roles can be introduced later.
 
 ## 3. In scope
-- Cognito SSO
+- Entra ID SSO
 - Cost Codes
 - Vendors
 - Estimates
@@ -97,7 +97,7 @@ Currency: `decimal(18,2)`. Estimate quantities/unit cost: `decimal(18,2)` for PO
 Persist audit timestamps in UTC.
 
 ### BR-014 User identity
-Persist Cognito `sub` as CreatedBy/UpdatedBy. Display email/name from claims where available.
+Persist Entra `sub` as CreatedBy/UpdatedBy. Display email/name from claims where available.
 
 ## 6. Acceptance scenario
 Given cost codes and vendors exist:

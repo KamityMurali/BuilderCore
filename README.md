@@ -2,16 +2,16 @@
 
 A working proof-of-concept for residential construction cost control:
 
-**Cognito Sign-In → Estimate → Approve → Job/Budget → Purchase Order → Issue PO → Post Actual Cost → Job Cost/Variance → SignalR refresh**
+**Entra Sign-In → Estimate → Approve → Job/Budget → Purchase Order → Issue PO → Post Actual Cost → Job Cost/Variance → SignalR refresh**
 
 ## Prerequisites
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- Optional: AWS Cognito User Pool (only required for production-like authentication)
+- Optional: Azure Entra ID app registration (only required for production-like authentication)
 
 ## Technology
 - .NET 10, Blazor Interactive Server, SignalR
 - Dapper + Microsoft.Data.Sqlite + SQLite (`buildercore.db`)
-- AWS Cognito OIDC (optional) or Development auth
+- Azure Entra ID OIDC (optional) or Development auth
 
 ## Quick start (local Development)
 
@@ -55,21 +55,21 @@ Data Source=buildercore.db;Foreign Keys=True
 
 No manual SQL steps are required for local POC use.
 
-## Cognito configuration (when ready)
-1. Create a Cognito User Pool, domain, and web app client
+## Azure Entra ID configuration (when ready)
+1. Register a web app in Microsoft Entra ID and create a client secret
 2. Enable Authorization Code flow with scopes `openid`, `email`, `profile`
-3. Configure callback URL: `https://{host}/signin-oidc`
-4. Configure sign-out URL: `https://{host}/`
-5. Set `Authentication:Mode` to `Cognito` and populate `Authentication:Cognito` settings
+3. Configure redirect URI: `https://{host}/signin-oidc`
+4. Configure front-channel logout URL: `https://{host}/signout-callback-oidc`
+5. Set `Authentication:Mode` to `Entra` and populate `Authentication:Entra` settings
 
 Example (values via user secrets / environment variables):
 
 ```json
 {
   "Authentication": {
-    "Mode": "Cognito",
-    "Cognito": {
-      "Authority": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_XXXXX",
+    "Mode": "Entra",
+    "Entra": {
+      "TenantId": "your-tenant-id",
       "ClientId": "your-client-id",
       "ClientSecret": "your-client-secret",
       "SignedOutRedirectUri": "/"
@@ -79,7 +79,7 @@ Example (values via user secrets / environment variables):
 }
 ```
 
-Login/logout endpoints: `/login` and `/logout`.
+Login/logout endpoints: `/login` and `/logout`. See `docs/05-security-entra.md` for full setup details.
 
 ## Demo workflow
 After first launch in Development:
@@ -105,7 +105,7 @@ Manual acceptance path (new data):
 dotnet test
 ```
 
-Integration tests use temporary SQLite files and synthetic auth (no live Cognito calls).
+Integration tests use temporary SQLite files and synthetic auth (no live Entra calls).
 
 ## Project structure
 

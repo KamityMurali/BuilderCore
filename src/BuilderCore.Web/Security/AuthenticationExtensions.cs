@@ -7,11 +7,14 @@ namespace BuilderCore.Web.Security;
 
 public static class AuthenticationExtensions
 {
-    public static IServiceCollection AddBuilderAuthentication(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
+    public static IServiceCollection AddBuilderAuthentication(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
     {
-        var authMode = configuration["Authentication:Mode"] ?? "Development";
+        var authMode = configuration["Authentication:Mode"] ?? AuthenticationModes.Development;
 
-        if (string.Equals(authMode, "Development", StringComparison.OrdinalIgnoreCase))
+        if (AuthenticationModes.IsDevelopment(authMode))
         {
             if (!environment.IsDevelopment())
             {
@@ -24,14 +27,11 @@ public static class AuthenticationExtensions
                     DevelopmentAuthenticationDefaults.Scheme,
                     _ => { });
         }
-        else if (string.Equals(authMode, "Cognito", StringComparison.OrdinalIgnoreCase))
+        else if (AuthenticationModes.IsEntra(authMode))
         {
-            var cognito = configuration.GetSection("Authentication:Cognito");
-            var authority = cognito["Authority"] ?? throw new InvalidOperationException("Authentication:Cognito:Authority is required.");
-            var clientId = cognito["ClientId"] ?? throw new InvalidOperationException("Authentication:Cognito:ClientId is required.");
-            var clientSecret = cognito["ClientSecret"];
-            var metadataAddress = cognito["MetadataAddress"];
-            var signedOutRedirectUri = cognito["SignedOutRedirectUri"] ?? "/";
+            var entra = configuration.GetSection(EntraOptions.SectionName).Get<EntraOptions>()
+                ?? throw new InvalidOperationException($"Configuration section '{EntraOptions.SectionName}' is required.");
+            entra.Validate();
 
             services.AddAuthentication(options =>
                 {
@@ -41,16 +41,15 @@ public static class AuthenticationExtensions
                 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
                 {
-                    options.Authority = authority;
-                    options.ClientId = clientId;
-                    if (!string.IsNullOrWhiteSpace(clientSecret))
-                    {
-                        options.ClientSecret = clientSecret;
-                    }
+                    options.Authority = entra.GetAuthority();
+                    options.ClientId = entra.ClientId;
+                    options.CallbackPath = entra.CallbackPath;
+                    options.SignedOutCallbackPath = entra.SignedOutCallbackPath;
+                    options.SignedOutRedirectUri = entra.SignedOutRedirectUri;
 
-                    if (!string.IsNullOrWhiteSpace(metadataAddress))
+                    if (!string.IsNullOrWhiteSpace(entra.ClientSecret))
                     {
-                        options.MetadataAddress = metadataAddress;
+                        options.ClientSecret = entra.ClientSecret;
                     }
 
                     options.ResponseType = OpenIdConnectResponseType.Code;
@@ -58,24 +57,21 @@ public static class AuthenticationExtensions
                     options.GetClaimsFromUserInfoEndpoint = true;
                     options.Scope.Clear();
                     options.Scope.Add("openid");
-                    options.Scope.Add("email");
                     options.Scope.Add("profile");
-                    options.SignedOutRedirectUri = signedOutRedirectUri;
+                    options.Scope.Add("email");
                     options.MapInboundClaims = false;
                     options.TokenValidationParameters.NameClaimType = "name";
-                    options.TokenValidationParameters.RoleClaimType = "cognito:groups";
+                    options.TokenValidationParameters.RoleClaimType = "roles";
                 });
         }
         else
         {
-            throw new InvalidOperationException($"Unknown Authentication:Mode '{authMode}'.");
+            throw new InvalidOperationException(
+                $"Unknown Authentication:Mode '{authMode}'. Supported values: {AuthenticationModes.Development}, {AuthenticationModes.Entra}.");
         }
 
         services.AddAuthorization(options =>
         {
-            options.FallbackPolicy = options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
-                .RequireAuthenticatedUser()
-                .Build();
             options.AddPolicy(Policies.AuthenticatedUser, policy => policy.RequireAuthenticatedUser());
         });
 

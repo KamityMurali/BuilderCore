@@ -1,12 +1,12 @@
 # Architecture Specification — Dapper + SQLite
 
 ## 1. Style
-Use a modular monolith: .NET 10 Blazor Web App (Interactive Server), application services, focused Dapper data-access classes, SQLite, SignalR, and switchable Development/Cognito authentication.
+Use a modular monolith: .NET 10 Blazor Web App (Interactive Server), application services, focused Dapper data-access classes, SQLite, SignalR, and switchable Development/Entra authentication.
 
 ```text
 Browser -> Blazor Server -> Application Services -> Dapper -> Microsoft.Data.Sqlite -> buildercore.db
                               |                    \-> JobCostHub
-                              \-> ICurrentUserService -> Local Dev Auth / Cognito OIDC
+                              \-> ICurrentUserService -> Local Dev Auth / Entra ID OIDC
 ```
 
 ## 2. Structure

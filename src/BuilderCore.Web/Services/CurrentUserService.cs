@@ -13,6 +13,7 @@ public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor)
         ?? string.Empty;
 
     public string? Email => User?.FindFirstValue("email")
+        ?? User?.FindFirstValue("preferred_username")
         ?? User?.FindFirstValue(ClaimTypes.Email);
 
     public string DisplayName =>
