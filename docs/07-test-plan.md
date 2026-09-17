@@ -5,7 +5,7 @@ Use real SQLite databases for integration tests. Prefer a unique temporary `.db`
 ## Unit tests
 - Estimate line amount and total.
 - Job-cost variance.
-- Current user maps Cognito/local `sub`.
+- Current user maps Entra/local `sub`.
 
 ## Integration/service tests
 - Schema initializer creates required tables and can run repeatedly safely.
@@ -16,7 +16,7 @@ Use real SQLite databases for integration tests. Prefer a unique temporary `.db`
 - Job Cost: budget-only, committed-only, actual-only, and combined cost codes; totals equal detail; Draft POs excluded.
 - Concurrency: stale Estimate and PO `Version` updates affect zero rows and return concurrency conflict.
 - Demo seeder: idempotent and expected scenarios/totals are present.
-- Authentication: synthetic ClaimsPrincipal only; no test calls AWS Cognito.
+- Authentication: synthetic ClaimsPrincipal only; no test calls Azure Entra ID.
 
 ## Manual SignalR test
 Two browser sessions view the same job. Issue/close a PO or post actual cost in one; the other re-queries and refreshes without a full browser reload. A browser viewing another job should not refresh unnecessarily.

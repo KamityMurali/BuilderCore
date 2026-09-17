@@ -29,7 +29,7 @@
             <div class="portal-banner-avatar hidden sm:flex" title="@CurrentUser.DisplayName">
                 @(CurrentUser.DisplayName.Length > 0 ? CurrentUser.DisplayName[0] : '?')
             </div>
-            @if (string.Equals(Configuration["Authentication:Mode"], "Cognito", StringComparison.OrdinalIgnoreCase))
+            @if (AuthenticationModes.UsesOpenIdConnect(Configuration["Authentication:Mode"]))
             {
                 <a class="portal-banner-link hidden sm:inline-flex" href="/logout">Sign out</a>
             }

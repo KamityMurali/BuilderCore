@@ -37,7 +37,7 @@ This package is intended to be copied into the root of a newly created Git repos
 
 The local POC must work without:
 - SQL Server
-- AWS Cognito
+- Azure Entra ID
 - AWS CLI
 - Docker
 - an external database
@@ -51,7 +51,7 @@ The initial runtime uses:
 - safe Development-only local authentication
 - realistic fictional demo data
 
-AWS Cognito and AWS deployment are later steps.
+Azure Entra ID and AWS deployment are later steps.
 
 ## Expected repository after implementation
 

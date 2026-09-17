@@ -17,7 +17,7 @@ dotnet run --project src/BuilderCore.Web
 ```
 
 ## Authentication
-- Application starts in Development without Cognito.
+- Application starts in Development without Entra ID.
 - A local development user is authenticated.
 - Development authentication cannot be enabled outside Development.
 

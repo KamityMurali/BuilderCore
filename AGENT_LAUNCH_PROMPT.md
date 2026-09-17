@@ -8,7 +8,7 @@ Implement the complete BuilderCore application directly in this repository.
 
 Work autonomously through the full implementation. Do not stop after producing a plan, architecture description, scaffolding, or partial implementation. Do not ask for confirmation between implementation phases unless a genuine external dependency makes progress impossible.
 
-The application must be runnable locally without AWS Cognito, SQL Server, Docker, or other external infrastructure. Use the Development-only authentication mechanism, Dapper, Microsoft.Data.Sqlite, automatic local database initialization, and realistic demo data specified in the package.
+The application must be runnable locally without Azure Entra ID, SQL Server, Docker, or other external infrastructure. Use the Development-only authentication mechanism, Dapper, Microsoft.Data.Sqlite, automatic local database initialization, and realistic demo data specified in the package.
 
 Create the solution/projects if they do not already exist.
 

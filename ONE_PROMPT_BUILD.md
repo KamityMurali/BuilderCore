@@ -10,13 +10,13 @@ Build a working construction estimating, purchasing, and job-cost POC using:
 - Dapper
 - Microsoft.Data.Sqlite
 - SQLite (local file database)
-- AWS Cognito User Pool using OpenID Connect Authorization Code flow
+- Azure Entra ID using OpenID Connect Authorization Code flow
 - Bootstrap/default Blazor styling
 - xUnit tests
 
 The application proves this workflow:
 
-**Cognito Sign-In → Estimate → Approve → Create Job/Budget → Purchase Order → Issue PO → Post Actual Cost → Job Cost/Variance → SignalR refresh**
+**Entra Sign-In → Estimate → Approve → Create Job/Budget → Purchase Order → Issue PO → Post Actual Cost → Job Cost/Variance → SignalR refresh**
 
 This is a POC. Favor simplicity, correctness, testability, and a complete runnable vertical slice over enterprise abstraction.
 
@@ -33,7 +33,7 @@ Read these files completely before modifying or creating application code:
 3. `docs/02-architecture.md`
 4. `docs/03-use-cases.md`
 5. `docs/04-ui-spec.md`
-6. `docs/05-security-cognito.md`
+6. `docs/05-security-entra.md`
 7. `docs/07-test-plan.md`
 8. `database/001_schema.sql`
 9. `database/002_seed.sql`
@@ -49,7 +49,7 @@ Do not ask for confirmation between phases. Continue until the complete POC is i
 # 2. SCOPE GUARDRAIL
 
 Implement only:
-- Cognito authentication
+- Entra ID authentication
 - Dashboard
 - Cost Codes
 - Vendors
@@ -155,8 +155,8 @@ Keep SQL isolated so the future production path can move to SQL Server + Dapper 
 # 5. AUTHENTICATION
 
 
-## Development authentication — Cognito must NOT block the POC
-AWS Cognito may not be configured yet. The POC must work completely without AWS.
+## Development authentication — Entra ID must NOT block the POC
+Azure Entra ID may not be configured yet. The POC must work completely without Azure credentials.
 
 Support two authentication modes:
 
@@ -170,7 +170,7 @@ use a local development authentication handler that creates an authenticated pri
 - `email = developer@buildercore.local`
 - `name = POC Developer`
 
-### `Cognito`
+### `Entra`
 Use Cookie + OpenID Connect authentication as described below.
 
 Mandatory safety rule:
@@ -180,11 +180,11 @@ Mandatory safety rule:
 Automated tests must use synthetic claims/test current-user implementations and must never call AWS.
 
 
-### AWS Cognito mode
+### Azure Entra ID mode
 
 Configure ASP.NET Core authentication using:
 - Cookie authentication for application session.
-- OpenID Connect challenge against AWS Cognito.
+- OpenID Connect challenge against Azure Entra ID.
 - Authorization Code flow.
 - scopes: `openid`, `email`, `profile`.
 - authenticated-user fallback authorization policy.
@@ -194,7 +194,7 @@ Configuration must be external:
 ```json
 {
   "Authentication": {
-    "Cognito": {
+    "Entra": {
       "Authority": "",
       "ClientId": "",
       "ClientSecret": "",
@@ -209,13 +209,13 @@ Do not put real values in source.
 
 Implement `ICurrentUserService`.
 
-Use Cognito `sub` as the persistent user identity for audit fields.
+Use Entra `sub` as the persistent user identity for audit fields.
 
-If real Cognito configuration is absent in local/test execution:
+If real Entra configuration is absent in local/test execution:
 - application code must still compile;
-- automated tests must not require live Cognito;
+- automated tests must not require live Entra;
 - tests should use synthetic authenticated ClaimsPrincipal instances;
-- document the required Cognito configuration in README.
+- document the required Entra configuration in README.
 
 Do not weaken production authentication merely to make local testing easier.
 
@@ -534,7 +534,7 @@ Verify:
 - job totals
 
 ## Authentication
-- CurrentUserService reads Cognito `sub`
+- CurrentUserService reads Entra `sub`
 - email/display claims
 - unauthenticated state handled appropriately
 
@@ -543,7 +543,7 @@ Test concurrency behavior where practical.
 
 Use real SQLite integration tests (temporary database files or an in-memory SQLite connection kept open for the test). Do not mock Dapper and do not require SQL Server.
 
-No test may call live Cognito.
+No test may call live Entra.
 
 ---
 
@@ -659,7 +659,7 @@ Update/create README with:
 - prerequisites
 - SQLite database initialization
 - database initialization/setup
-- Cognito User Pool/app-client configuration
+- Entra app registration configuration
 - callback/sign-out URL placeholders
 - local secret configuration
 - run instructions
@@ -717,7 +717,7 @@ When implementation is complete, respond with:
 2. build result;
 3. test result with passed/failed count;
 4. database setup instructions;
-5. Cognito configuration still required;
+5. Entra configuration still required;
 6. how to run;
 7. demo steps;
 8. any known limitations.
